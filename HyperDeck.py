@@ -33,7 +33,7 @@ class HyperDeck:
 		if loop:
 			return self._run_command('play: loop: true')
 		else:
-			return self._run_command('play: loop: true')
+			return self._run_command('play: loop: false')
 
 
 	# Choose the disk (usually 1 or 2)

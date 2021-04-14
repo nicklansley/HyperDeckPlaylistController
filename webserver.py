@@ -17,9 +17,9 @@ def get_clips():
     clip_list = hyperdeck.get_clips_list()
     return json.dumps(clip_list)
 
-def play_clip_with_index(clip_index):
+def play_clip_with_index(clip_index, loop):
     response = hyperdeck.select_clip_with_index(clip_index)
-    response = hyperdeck.play()
+    response = hyperdeck.play(loop)
     return json.dumps(response)
 
 def get_status():
@@ -30,13 +30,13 @@ def stop():
     response = hyperdeck.stop()
     return json.dumps(response)
 
-def play():
-    response = hyperdeck.play()
+def play(loop):
+    response = hyperdeck.play(loop)
     return json.dumps(response)
 
-def play_range(from_timecode, to_timecode):
+def play_range(from_timecode, to_timecode, loop):
     response = hyperdeck.set_playrange(from_timecode, to_timecode)
-    response = hyperdeck.play()
+    response = hyperdeck.play(loop)
     return json.dumps(response)
 
 
@@ -57,7 +57,10 @@ class MyHttpRequestHandler(BaseHTTPRequestHandler):
             response = stop()
 
         elif self.path == '/play':
-            response = play()
+            response = play(False)
+
+        elif self.path == '/play/loop':
+            response = play(True)
 
         elif self.path == '/index.js':
             response = get_local_file('index.js')
@@ -65,20 +68,24 @@ class MyHttpRequestHandler(BaseHTTPRequestHandler):
         elif self.path == '/getclips':
             response = get_clips()
 
-        elif self.path == '/getclips':
-            response = get_clips()
-
         elif self.path.startswith('/playclip'):
             path_list = self.path.split('/')
             clip_index = int(path_list[2])
-            response = play_clip_with_index(clip_index)
+            if self.path.endswith('/loop'):
+                response = play_clip_with_index(clip_index, True)
+            else:
+                response = play_clip_with_index(clip_index, False)
 
         elif self.path.startswith('/playrange'):
+            # Example /playrange/00:30:00:00/00:31:00:00
+            # Gets the HyperDeck to play for 1 minute in a loop
             path_list = self.path.split('/')
             from_timecode = path_list[2]
             to_timecode = path_list[3]
-            print(from_timecode, to_timecode)
-            response = play_range(from_timecode, to_timecode)
+            if self.path.endswith('/loop'):
+                response = play_range(from_timecode, to_timecode, True)
+            else:
+                response = play_range(from_timecode, to_timecode, False)
 
         else:
             self.send_response(404)
