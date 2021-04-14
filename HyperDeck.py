@@ -7,13 +7,15 @@ class HyperDeck:
 		self.ip = ip
 		self.port = port
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.sock.settimeout(0.1)
+		self.sock.settimeout(0.5)
 
 	# Connect to the HyperDeck
 	def connect(self):
 		self.sock.connect((self.ip, self.port))
 		return self._run_command('')
 
+	def disconnect(self):
+		self.sock.close()
 
 	# Get useful live snapshot of what HyperDeck is doing
 	def get_transport_info(self):
@@ -44,7 +46,7 @@ class HyperDeck:
 		clip_index = 1 + max(clip_index, 0)
 		return self._run_command('goto: clip id: {}'.format(clip_index))
 
-	# Set a playyrange from timecode to timecode in format '00:00:00:00'  ('HH:MM:SS:FF')
+	# Set a play-range from timecode to timecode in format '00:00:00:00'  ('HH:MM:SS:FF')
 	def set_playrange(self, from_timecode, to_timecode):
 		return self._run_command('playrange set: in: {} out: {}'.format(from_timecode, to_timecode))
 
@@ -90,7 +92,8 @@ class HyperDeck:
 			#return self.sock.send(bytes(msg, 'utf-8'))
 			self.sock.sendall(msg.encode('utf-8'))
 			return True
-		except:
+		except Exception as e:
+			print("Error during send to HyperDeck:", e)
 			return False
 
 	# Receives text information back from HyperDeck
@@ -111,7 +114,7 @@ class HyperDeck:
 					chunks.append(chunk)
 					bytes_recd = bytes_recd + len(chunk)
 					received_bytes = b''.join(chunks)
-					received_text = str(received_bytes)
+					received_text += str(received_bytes)
 			except Exception as e:
 				end_of_input_flag = True
 
