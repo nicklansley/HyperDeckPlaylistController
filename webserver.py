@@ -10,7 +10,8 @@ def get_local_file(file_name):
         lines = f.readlines()
         file_text = ''
         for line in lines:
-            file_text += line.replace('\r', '').replace('\n', '')
+            # file_text += line.replace('\r', '').replace('\n', '')
+            file_text += line
         return file_text
 
 def get_clips():
@@ -50,7 +51,7 @@ class MyHttpRequestHandler(BaseHTTPRequestHandler):
         if self.path == '/':
             response = get_local_file('index.html')
 
-        elif self.path == '/getstatus':
+        elif self.path == '/status':
             response = get_status()
 
         elif self.path == '/stop':

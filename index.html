@@ -4,14 +4,44 @@
     <meta charset="UTF-8">
     <title>HyperDeck Playlist Service</title>
   <script src="index.js"></script>
+
+<style>
+    table, th, td {
+        border-collapse: collapse;
+        border: 1px solid black;
+        padding: 5px;
+    }
+
+    table {
+        float: left;
+        margin: 10px;
+    }
+</style>
 </head>
 <body>
 <h2>HyperDeck Playlist Service</h2>
 <div id="divHeader">
-
+            <span id="tdStatus"></span>
+            <div id="tdSpeed"></div>
+            <div id="tdSlotId"></div>
+            <div id="tdClipId"></div>
+            <div id="tdSingleClipMode"></div>
+            <div id="tdCurrentTimeCode"></div>
+            <div id="tdVideoFormat"></div>
+            <div id="tdLoop"></div>
 </div>
-<div id="divClipsTable">
 
+<div id="divControls">
+    <br />
+    <button id="buttonSwitchClipTables" onclick="switchClipTables(this)">Show Play List</button>
+    <button id="buttonPlayNoLoop" onclick="play(false)">Play (Loop: No)</button>
+    <button id="buttonPlayYesLoop" onclick="play(true)">Play (Loop: Yes)</button>
+    <button id="buttonStop" onclick="stop()">Stop</button>
+    <br />
+</div>
+
+<div id="divClipsTable">
+    <table id="tableShowClips"></table>
 </div>
 <div id="divFooter">
 
