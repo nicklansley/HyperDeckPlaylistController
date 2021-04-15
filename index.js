@@ -14,10 +14,12 @@ let playList = [  ];
 
 let currentlyDisplayedTable = 'tableShowClips';
 
+let currentTimeCodeInteger = 0;
+let currentClipIndex ='';
+let previousClipIndex ='';
 
 const convertTimeCodeToInteger = (timeString, framerate) =>
 {
-
     // converts to an arbitrary integer to be used for timecode comparisons
     const timeArray = timeString.split(":");
     return parseInt(timeArray[0] + timeArray[1] + timeArray[2] + timeArray[3]);
@@ -28,7 +30,15 @@ const convertTimeCodeToInteger = (timeString, framerate) =>
 const getHyperDeckStatus = async () =>
 {
     const response = await fetch('/status', fetchParameters);
-    return await response.json();
+    const data = await response.json();
+    currentTimeCodeInteger =  convertTimeCodeToInteger(data['display timecode']);
+    currentClipIndex =  convertTimeCodeToInteger(data['clip id']);
+    if (currentClipIndex !== previousClipIndex && currentlyDisplayedTable === 'tableShowClips')
+    {
+        previousClipIndex = currentClipIndex;
+        getClips().then((clipList => listClipsAsTable(clipList, 'H')))
+    }
+    return data;
 }
 
 const displayHyperDeckStatus = async () =>
@@ -45,14 +55,17 @@ const displayHyperDeckStatus = async () =>
      <td id="tdVideoFormat"></td>
      <td id="tdLoop"></td>
      */
-    document.getElementById('tdStatus').innerText = `Status: ${data.status}`;
-    document.getElementById('tdSpeed').innerText = `Speed: ${data.speed}%`;
-    document.getElementById('tdSlotId').innerText = `Card Slot #: ${data['slot id']}`;
-    document.getElementById('tdClipId').innerText = `Current Clip: ${data['clip id]']}`;
-    document.getElementById('tdSingleClipMode').innerText = `Play single clip?: ${data['single clip]'] ? "Yes": "No"}`;
-    document.getElementById('tdCurrentTimeCode').innerText = `Current TimeCode: ${data['display timecode']}`;
-    document.getElementById('tdVideoFormat').innerText = `Video format: ${data['video format']}`;
-    document.getElementById('tdLoop').innerText = `Status: ${data.loop ? "Yes": "No"}`;
+    if (data)
+    {
+        document.getElementById('tdStatus').innerText = `Status: ${data.status}`;
+        document.getElementById('tdSpeed').innerText = `Speed: ${data.speed}%`;
+        document.getElementById('tdSlotId').innerText = `Card Slot #: ${data['slot id']}`;
+        document.getElementById('tdClipId').innerText = `Current Clip: ${data['clip id']}`;
+        document.getElementById('tdSingleClipMode').innerText = `Play single clip?: ${data['single clip]'] ? "Yes" : "No"}`;
+        document.getElementById('tdCurrentTimeCode').innerText = `Current TimeCode: ${data['display timecode']} (${currentTimeCodeInteger})`;
+        document.getElementById('tdVideoFormat').innerText = `Video format: ${data['video format']}`;
+        document.getElementById('tdLoop').innerText = `Status: ${data.loop ? "Yes" : "No"}`;
+    }
 }
 
 
@@ -142,6 +155,8 @@ const listClipsAsTable = (clipList, clipListType) =>
     row.appendChild(thActions);
     table.appendChild(row);
 
+    //Find which clip is the current clip that the playhead is on:
+
     //Display data
     for (let clip of clipList)
     {
@@ -157,6 +172,7 @@ const listClipsAsTable = (clipList, clipListType) =>
         tdClipName.innerText = clip.name;
         tdClipTimeCode.innerText = clip.timecode;
         tdClipDuration.innerText = clip.duration;
+
 
         const buttonAction = document.createElement('button');
         if (clipListType === "H" && !playList.find(playListClip => playListClip.index === clip.index ))
@@ -177,6 +193,11 @@ const listClipsAsTable = (clipList, clipListType) =>
         row.appendChild(tdClipDuration);
         row.appendChild(tdActions);
 
+
+        if (clip.index === currentClipIndex)
+        {
+            row.style.background = '#ddaaaa';
+        }
         table.appendChild(row);
     }
 }
@@ -185,7 +206,9 @@ const listClipsAsTable = (clipList, clipListType) =>
 
 
 window.addEventListener('load', function () {
-    getClips().then((clipList => listClipsAsTable(clipList, 'H' )));
+    displayHyperDeckStatus()
+        .then(() => getClips())
+        .then((clipList => listClipsAsTable(clipList, 'H' )));
 })
 
 setInterval(displayHyperDeckStatus, 500);
