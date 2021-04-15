@@ -10,8 +10,8 @@ const fetchParameters = {
     referrerPolicy: 'no-referrer',
 };
 
-let playList = [  ];
-
+let playList = [];
+let hyperDeckClipList = [];
 let currentlyDisplayedTable = 'tableShowClips';
 
 let currentTimeCodeInteger = 0;
@@ -99,10 +99,20 @@ const switchClipTables = (button) =>
     }
     else
     {
-        getClips().then((clipList => listClipsAsTable(clipList, 'H')));
+        listClipsAsTable(hyperDeckClipList, 'H');
         currentlyDisplayedTable = 'tableShowClips';
         button.innerText = "Show Play List";
     }
+}
+
+const refreshClipList  = () =>
+{
+    getClips()
+    .then((clipList =>
+    {
+        hyperDeckClipList = clipList;
+        listClipsAsTable(clipList, 'H')
+    }));
 }
 
 const addClipToPlaylist = (clip) =>
@@ -111,6 +121,7 @@ const addClipToPlaylist = (clip) =>
     {
         playList.push(clip);
     }
+    listClipsAsTable(hyperDeckClipList, 'H');
 }
 
 const removeClipFromPlaylist = (clip) =>
@@ -208,7 +219,11 @@ const listClipsAsTable = (clipList, clipListType) =>
 window.addEventListener('load', function () {
     displayHyperDeckStatus()
         .then(() => getClips())
-        .then((clipList => listClipsAsTable(clipList, 'H' )));
+        .then((clipList =>
+        {
+            hyperDeckClipList = clipList;
+            listClipsAsTable(clipList, 'H')
+        }));
 })
 
 setInterval(displayHyperDeckStatus, 500);
