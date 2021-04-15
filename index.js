@@ -83,6 +83,13 @@ const play = async (loop) =>
     return await response.json();
 }
 
+const playNow = async (clipIndex, loop) =>
+{
+    const response = await fetch(`/playclip/${clipIndex}${loop ? '/loop' : ''}`, fetchParameters);
+    return await response.json();
+}
+
+
 const stop = async (loop) =>
 {
     const response = await fetch('/stop', fetchParameters);
@@ -197,6 +204,12 @@ const listClipsAsTable = (clipList, clipListType) =>
             buttonAction.innerText = "Remove";
         }
         tdActions.appendChild(buttonAction);
+
+        const buttonPlayNow = document.createElement('button');
+        buttonPlayNow.onclick = () => playNow(clip.index, false);
+        buttonPlayNow.innerText = "Play Now";
+
+        tdActions.appendChild(buttonPlayNow);
 
         row.appendChild(tdClipIndex);
         row.appendChild(tdClipName);
