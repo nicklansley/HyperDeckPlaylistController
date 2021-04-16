@@ -1,6 +1,7 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 from urllib.parse import parse_qs, urlparse
+import argparse
 
 from HyperDeck import HyperDeck
 from time import sleep
@@ -107,9 +108,25 @@ class MyHttpRequestHandler(BaseHTTPRequestHandler):
             print(response)
 
 
-        return
-
-hyperdeck = HyperDeck("192.168.0.145", 9993)
-hyperdeck.connect()
-httpd = HTTPServer(("localhost", 8080), MyHttpRequestHandler)
-httpd.serve_forever()
+if __name__ == "__main__":
+    try:
+        print("HyperDeck Playlist Controller Web/API Server")
+        parser = argparse.ArgumentParser()
+        parser.add_argument("address", type=str, help="IP address of the HyperDeck to connect to")
+        args = parser.parse_args()
+        print("Connecting to HyperDeck at IP address " + args.address + "...")
+        hyperdeck = HyperDeck(args.address, 9993)
+        hyperdeck.connect()
+        print("Connected to HyperDeck at IP address " + args.address)
+        print("Starting localhost web server")
+        httpd = HTTPServer(("localhost", 8080), MyHttpRequestHandler)
+        print("Ready")
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("Shutting down localhost web server")
+        httpd.shutdown()
+        print("Disconnecting from HyperDeck at IP address " + args.address)
+        hyperdeck.disconnect()
+        print("Shutdown completed")
+    except HyperDeck.HyperDeckException as hde:
+        print(hde)

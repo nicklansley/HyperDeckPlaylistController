@@ -2,6 +2,7 @@ import json
 import socket
 from time import sleep
 
+
 class HyperDeck:
 	def __init__(self, ip, port):
 		self.ip = ip
@@ -9,10 +10,17 @@ class HyperDeck:
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.sock.settimeout(0.5)
 
+	class HyperDeckException(Exception):
+		def __init__(self, message):
+			self.message = message
+
 	# Connect to the HyperDeck
 	def connect(self):
-		self.sock.connect((self.ip, self.port))
-		return self._run_command('')
+		try:
+			self.sock.connect((self.ip, self.port))
+			return self._run_command('')
+		except socket.gaierror:
+			raise self.HyperDeckException('Network problem connecting to HyperDeck')
 
 	def disconnect(self):
 		self.sock.close()
@@ -25,7 +33,6 @@ class HyperDeck:
 	def stop(self):
 		return self._run_command('stop')
 
-
 	# Play the current clip or playrannge, with an optional true/false loop
 	def play(self, loop=False):
 		if loop == None:
@@ -35,11 +42,9 @@ class HyperDeck:
 		else:
 			return self._run_command('play: loop: false')
 
-
 	# Choose the disk (usually 1 or 2)
 	def select_slot(self, slot_id):
 		return self._run_command('slot select: slot id: {}'.format(slot_id))
-
 
 	# Make the clip with the provided index number the current clip
 	def select_clip_with_index(self, clip_index):
@@ -49,7 +54,6 @@ class HyperDeck:
 	# Set a play-range from timecode to timecode in format '00:00:00:00'  ('HH:MM:SS:FF')
 	def set_playrange(self, from_timecode, to_timecode):
 		return self._run_command('playrange set: in: {} out: {}'.format(from_timecode, to_timecode))
-
 
 	# Get a list of clips and format them into a list
 	def get_clips_list(self):

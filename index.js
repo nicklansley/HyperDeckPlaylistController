@@ -193,10 +193,11 @@ const listClipsAsTable = (clipList, clipListType) =>
 
 
         const buttonAction = document.createElement('button');
-        if (clipListType === "H" && !playList.find(playListClip => playListClip.index === clip.index ))
+        buttonAction.onclick = () => addClipToPlaylist(clip);
+        const clipInPlaylistCount = playList.filter(playListClip => playListClip.index === clip.index ).length;
+        if (clipListType === "H")
         {
-            buttonAction.onclick = () => addClipToPlaylist(clip);
-            buttonAction.innerText = "Add";
+            buttonAction.innerText = "Add" + clipInPlaylistCount > 0 ? " again" : "";
         }
         else
         {
