@@ -1,4 +1,5 @@
 import json
+from operator import itemgetter
 
 
 class DataClip:
@@ -13,8 +14,12 @@ class DataClip:
     def _initialise_db(self):
         try:
             with open("hdpc.json", "r", encoding="utf-8") as json_file:
-                json_data = json_file.readlines()
-                self.db_data = json.loads(json_data[0])
+                json_data_array = json_file.readlines()
+                json_data = ""
+                for json_data_line in json_data_array:
+                    json_data += json_data_line
+                self.db_data = json.loads(json_data)
+
         except FileNotFoundError:
             print("New playlist backup file will be created")
             self.db_data["playList"].append({"playListId": 1, "playListName": "My Playlist"})
@@ -23,7 +28,7 @@ class DataClip:
     def _save_db(self):
         try:
             with open("hdpc.json", "w", encoding="utf-8") as json_file:
-                json_data = json.dumps(self.db_data)
+                json_data = json.dumps(self.db_data, indent=4, sort_keys=True)
                 json_file.write(json_data)
                 print("DB saved")
         except Exception as e:
@@ -33,33 +38,40 @@ class DataClip:
         try:
             clip_list = self.db_data["clipList"]
             filtered_clip_list = []
+
+            # We must get just the clips with the requested play_list_is
             for clip in clip_list:
                 if clip["playListId"] == play_list_id:
                     filtered_clip_list.append(clip)
 
-            return filtered_clip_list
+            # Now sort by runningOrder and return
+            return sorted(filtered_clip_list, key=itemgetter('runningOrder'))
 
         except Exception as e:
             raise self.DataClipException("Database exception: " + e)
 
     def get_play_lists(self):
         try:
-            return self.db_data["playList"]
+            return sorted(self.db_data["playList"], key=itemgetter('playListName'))
         except Exception as e:
             raise self.DataClipException("Database exception: " + e)
 
-    def insert_clip(self, play_list_id, clip):
+    def insert_clip(self, play_list_id, new_clip):
         try:
+            # Find the highest running_order value and add 1 to its value
+            # to assign to the new clip (which is going to the 'bottom' of the play list.
             max_running_order = 0
-            for clip in self.db_data['clipList']:
-                if clip['runningOrder'] > max_running_order:
-                    max_running_order = clip['runningOrder']
+            for play_list_clip in self.db_data['clipList']:
+                if play_list_clip['playListId'] == play_list_id and play_list_clip['runningOrder'] > max_running_order:
+                    max_running_order = play_list_clip['runningOrder']
 
-            clip["runningOrder"] = max_running_order + 1
-            clip['playListId'] = play_list_id
-            clip['clipId'] = len(self.db_data['clipList']) + 1
+            # Assign the new running order and the playlist to which this clip is to belong:
+            new_clip["runningOrder"] = max_running_order + 1
+            new_clip['playListId'] = play_list_id
+            new_clip['clipId'] = len(self.db_data['clipList']) + 1
 
-            self.db_data['clipList'].append(clip)
+            # Add the new clip to the list:
+            self.db_data['clipList'].append(new_clip)
 
             # Save this change:
             self._save_db()
@@ -68,11 +80,11 @@ class DataClip:
         except Exception as e:
             raise self.DataClipException("Database exception: " + e)
 
-    def delete_clip(self, clip_id):
+    def delete_clip(self, play_list_id, clip_id):
         try:
             new_clip_list = []
             for clip in self.db_data['clipList']:
-                if clip['clipId'] != clip_id:
+                if clip['playListId'] != play_list_id and clip['clipId'] != clip_id:
                     new_clip_list.append(clip)
             self.db_data['clipList'] = new_clip_list
 
@@ -82,18 +94,22 @@ class DataClip:
         except Exception as e:
             raise self.DataClipException("Database exception: " + e)
 
-    def insert_playlist(self, play_list_name):
+    def insert_playlist(self, new_play_list_name):
         try:
             if len(self.db_data['playList']) == 0:
                 play_list_id = 1
             else:
+                # Find the highest existing play_list_id:
                 max_play_list_id = 0
                 for play_list in self.db_data['playList']:
                     if play_list['playListId'] > max_play_list_id:
                         max_play_list_id = play_list['playListId']
+
+                # Add 1 to create the new play_list_id value:
                 play_list_id = max_play_list_id + 1
 
-            self.db_data['playList'].append({"playListId": play_list_id, "playListName": play_list_name})
+            # Add the playlist to the list:
+            self.db_data['playList'].append({"playListId": play_list_id, "playListName": new_play_list_name})
 
             # Save this change:
             self._save_db()
@@ -127,9 +143,9 @@ class DataClip:
             current_running_order_position = 1
             clip_id_in_wanted_position = 0
 
-            ## Discover current_running_order_position of clip we want to move:
+            # Discover current_running_order_position of clip we want to move:
             for clip in self.db_data['clipList']:
-                if clip_id == clip['clipId']:
+                if play_list_id == clip['playListId'] and clip_id == clip['clipId']:
                     current_running_order_position = clip['runningOrder']
                     break
 
@@ -141,14 +157,14 @@ class DataClip:
 
             # Which clip is in the new_running_order_position currently?:
             for cliplist_index in range(len(self.db_data['clipList'])):
-                if new_running_order_position == self.db_data['clipList'][cliplist_index]['runningOrder']:
+                if play_list_id == clip['playListId'] and new_running_order_position == self.db_data['clipList'][cliplist_index]['runningOrder']:
                     # Let's give this clip the current_running_order_position
                     self.db_data['clipList'][cliplist_index]['runningOrder'] = current_running_order_position
                     break
 
             # Now let's give our own clip the new_running_order_position
             for cliplist_index in range(len(self.db_data['clipList'])):
-                if clip_id == clip['clipId']:
+                if play_list_id == self.db_data['clipList'][cliplist_index]['playListId'] and clip_id == self.db_data['clipList'][cliplist_index]['clipId']:
                     self.db_data['clipList'][cliplist_index]['runningOrder'] = new_running_order_position
                     break
 

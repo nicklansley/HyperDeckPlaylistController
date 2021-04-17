@@ -1,18 +1,26 @@
 from DataClip import DataClip
 dataclip = DataClip()
+
+
+#dataclip.insert_playlist("My Second PlayList")
 playlists = dataclip.get_play_lists()
-print(playlists)
-play_list_id = playlists[0]["playListId"]
-play_list_name = playlists[0]["playListName"]
-print(play_list_id, play_list_name)
+for playlist in playlists:
+    print(playlist)
+
+play_list_id = 2
+
+#new_clip1 = {'hyperDeckClipIndex': 17, 'clipName': 'Sunny days', 'timecode': '11:17:17:17', 'duration': "11:17:10:00" }
+#dataclip.insert_clip(play_list_id, new_clip1)
+#new_clip2 = {'hyperDeckClipIndex': 23, 'clipName': 'Spring Awakening', 'timecode': '11:23:23:23', 'duration': "11:04:23:00" }
+#dataclip.insert_clip(play_list_id, new_clip2)
+#new_clip3 = {'hyperDeckClipIndex': 4, 'clipName': 'Autum Hold', 'timecode': '11:04:04:04', 'duration': "11:23:10:44" }
+#dataclip.insert_clip(play_list_id, new_clip3)
 
 clips = dataclip.get_clips_list(play_list_id)
-print(clips)
+for clip in clips:
+    print(clip)
 
-#new_clip = {'clipIndex': 27, 'clipName': 'Nick is hilarious', 'timecode': '00:17:17:17', 'duration': "00:00:10:00" }
-#new_clip = {'clipIndex': 23, 'clipName': 'Nick is funny', 'timecode': '00:23:23:23', 'duration': "00:23:10:00" }
-new_clip = {'clipIndex': 4, 'clipName': 'Nick is funny', 'timecode': '00:04:04:04', 'duration': "00:23:10:44" }
-dataclip.insert_clip(play_list_id, new_clip)
+dataclip.move_clip_up_or_down_running_order(play_list_id, 2, True)
 
 clips = dataclip.get_clips_list(play_list_id)
 for clip in clips:

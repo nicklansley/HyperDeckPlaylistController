@@ -9,8 +9,7 @@ const fetchParameters = {
     redirect: 'follow',
     referrerPolicy: 'no-referrer',
 };
-
-let playList = [];
+let currentPlayList = []
 let hyperDeckClipList = [];
 let currentlyDisplayedTable = 'tableShowClips';
 
@@ -36,7 +35,7 @@ const getHyperDeckStatus = async () =>
     if (currentClipIndex !== previousClipIndex && currentlyDisplayedTable === 'tableShowClips')
     {
         previousClipIndex = currentClipIndex;
-        getClips().then((clipList => listClipsAsTable(clipList, 'H')))
+        getHyperDeckClips().then((clipList => listClipsAsTable(clipList, 'H')))
     }
     return data;
 }
@@ -70,7 +69,7 @@ const displayHyperDeckStatus = async () =>
 
 
 
-const getClips = async () =>
+const getHyperDeckClips = async () =>
 {
     const response = await fetch('/getclips', fetchParameters);
     return await response.json();
@@ -90,17 +89,17 @@ const playNow = async (clipIndex, loop) =>
 }
 
 
-const stop = async (loop) =>
+const stop = async () =>
 {
     const response = await fetch('/stop', fetchParameters);
     return await response.json();
 }
 
-const switchClipTables = (button) =>
+const switchClipTables = async (button) =>
 {
     if (currentlyDisplayedTable === 'tableShowClips')
     {
-        listClipsAsTable(playList, 'P');
+        listClipsAsTable(currentPlayList, 'P');
         currentlyDisplayedTable = 'tablePlayList';
         button.innerText = "Show Clips in HyperDeck";
     }
@@ -112,9 +111,38 @@ const switchClipTables = (button) =>
     }
 }
 
+
+const getPlayLists = async () =>
+{
+    const response = await fetch(`/playlist`, fetchParameters);
+    return await response.json();
+
+}
+
+const populateSelectControlWithPlayLists = async () =>
+{
+    const playLists = await getPlayLists();
+    const selectPlaylists = document.getElementById('selectPlayLists');
+    for (const playList of playLists)
+    {
+        const option = document.createElement('option');
+        option.value = playList['playListId'];
+        option.text = playList['playListName'];
+        selectPlaylists.appendChild(option);
+    }
+}
+
+const getClipsInPlayList = async (selectControl) =>
+{
+    const playListId = selectControl.value;
+    const response = await fetch(`/playlist/${playListId}`, fetchParameters);
+    const data = await response.json();
+    return data;
+}
+
 const refreshClipList  = () =>
 {
-    getClips()
+    getHyperDeckClips()
     .then((clipList =>
     {
         hyperDeckClipList = clipList;
@@ -122,28 +150,34 @@ const refreshClipList  = () =>
     }));
 }
 
-const addClipToPlaylist = (clip) =>
+const addClipToPlayList = (clip) =>
 {
-    if (!playList.find(playListClip => playListClip.index === clip.index ))
+    if (!currentPlayList.find(playListClip => playListClip.index === clip.index ))
     {
-        playList.push(clip);
+        currentPlayList.push(clip);
     }
     listClipsAsTable(hyperDeckClipList, 'H');
 }
 
-const removeClipFromPlaylist = (clip) =>
+const addClipToPlayListOnServer = async (clip) =>
 {
-    if (playList.find(playListClip => playListClip.index === clip.index ))
+    const response = await fetch('/status', fetchParameters);
+    const data = await response.json();
+}
+
+const removeClipFromPlayList = (clip) =>
+{
+    if (currentPlayList.find(playListClip => playListClip.index === clip.index ))
     {
         let updatedPlayList = [];
-        for (let thisClip of playList)
+        for (let thisClip of currentPlayList)
         {
             if (thisClip.index !== clip.index)
                 updatedPlayList.push(thisClip);
         }
-        playList = updatedPlayList;
+        currentPlayList = updatedPlayList;
     }
-    listClipsAsTable( playList, 'P');
+    listClipsAsTable( currentPlayList, 'P');
 }
 
 
@@ -186,28 +220,29 @@ const listClipsAsTable = (clipList, clipListType) =>
         let tdClipDuration = document.createElement('td');
         let tdActions = document.createElement('td');
 
-        tdClipIndex.innerText = clip.index;
+        tdClipIndex.innerText = clip.hyperDeckClipIndex;
         tdClipName.innerText = clip.name;
         tdClipTimeCode.innerText = clip.timecode;
         tdClipDuration.innerText = clip.duration;
 
 
-        const buttonAction = document.createElement('button');
-        buttonAction.onclick = () => addClipToPlaylist(clip);
-        const clipInPlaylistCount = playList.filter(playListClip => playListClip.index === clip.index ).length;
+        const buttonAddRemoveClip = document.createElement('button');
+        buttonAddRemoveClip.onclick = () => addClipToPlayList(clip);
         if (clipListType === "H")
         {
-            buttonAction.innerText = "Add" + clipInPlaylistCount > 0 ? " again" : "";
+            const clipInPlaylistCount = currentPlayList.filter(playListClip => playListClip.hyperDeckClipIndex === clip.hyperDeckClipIndex ).length;
+            buttonAddRemoveClip.innerText = `Add ${clipInPlaylistCount > 0 ? " again" : ""}`;
+            buttonAddRemoveClip.onclick = () => addClipToPlayList(clip);
         }
         else
         {
-            buttonAction.onclick = () => removeClipFromPlaylist(clip);
-            buttonAction.innerText = "Remove";
+            buttonAddRemoveClip.onclick = () => removeClipFromPlayList(clip);
+            buttonAddRemoveClip.innerText = "Remove";
         }
-        tdActions.appendChild(buttonAction);
+        tdActions.appendChild(buttonAddRemoveClip);
 
         const buttonPlayNow = document.createElement('button');
-        buttonPlayNow.onclick = () => playNow(clip.index, false);
+        buttonPlayNow.onclick = () => playNow(clip.hyperDeckClipIndex, false);
         buttonPlayNow.innerText = "Play Now";
 
         tdActions.appendChild(buttonPlayNow);
@@ -227,17 +262,24 @@ const listClipsAsTable = (clipList, clipListType) =>
     }
 }
 
+const getCurrentPlayList = async () =>
+{
+    //Get current playlist
+    currentPlayList = await getClipsInPlayList(document.getElementById('selectPlayLists'));
+}
 
 
-
-window.addEventListener('load', function () {
+window.addEventListener('load',  () =>
+{
     displayHyperDeckStatus()
-        .then(() => getClips())
+        .then(() => getHyperDeckClips())
         .then((clipList =>
-        {
-            hyperDeckClipList = clipList;
-            listClipsAsTable(clipList, 'H')
-        }));
+            {
+                hyperDeckClipList = clipList;
+                listClipsAsTable(clipList, 'H')
+            }))
+        .then(() => populateSelectControlWithPlayLists())
+        .then(() => getCurrentPlayList());
 })
 
 setInterval(displayHyperDeckStatus, 500);
