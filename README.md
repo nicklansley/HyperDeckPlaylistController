@@ -1,5 +1,5 @@
 # Python Controller for Blackmagic Design Hyperdeck
-### Using the HyperDeck's "Blackmagic HyperDeck Ethernet Protocol"
+### Harnessing the HyperDeck's "Blackmagic HyperDeck Ethernet Protocol"
 
 This repo has a simple Python3 program that:
 * Lists clips on a HyperDeck slot disk / SD card
@@ -15,10 +15,10 @@ This is a work in progress so be free to join in. My main objective is to wrap t
 Python functions within the 'HyperDeck' class included with this repo.
 
 The underlying communication with the Hyperdesk is over a simple internal network connection using the 
-built-in Python 'socket' library. I have also used PrettyTable in test.py to make the clips list look
-nicer: <pre>pip install PrettyTable</pre>
-
-To run the demo, put some clips on a card in your HyperDeck, set the IP address in test.js
-and then (making sure you are using Python3):
-<pre>python test.js</pre>
-
+built-in Python 'socket' library. 
+In turn, a Python web server provides an API to access HyperDeck and now DataClip (playlist)
+functions.
+### FAST START ###
+1. Make sure your BlackMagic HyperDeck is switched on and can be seen over your local network.
+2. From a terminal prompt, replacing '192.168.0.145' with your HyperDeck's IP address: <pre>python webserver.py 192.168.0.145</pre>
+3. Open a web browser and head to: http://localhost:8080
