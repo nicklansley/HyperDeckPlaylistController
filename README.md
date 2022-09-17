@@ -1,6 +1,8 @@
 # Python Controller for Blackmagic Design Hyperdeck
 ### Harnessing the HyperDeck's "Blackmagic HyperDeck Ethernet Protocol"
 
+## Archived as there are now better applications available for controlling HyperDecks :-)
+
 This repo has a simple Python3 program that:
 * Lists clips on a HyperDeck slot disk / SD card
 * Allows you to choose a clip to play
